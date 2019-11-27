@@ -1,0 +1,57 @@
+data Complex a = Complex a a  --комплексное: число с мнимой частью
+
+instance (Show a) => Show (Complex a) where
+    show (Complex real imaginary) = show real ++ "+" ++ show imaginary ++ "I"
+	
+instance (Eq a) => Eq (Complex a) where
+    (Complex real1 imaginary1) == (Complex real2 imaginary2) = (real1 == real2) && (imaginary1 == imaginary2)
+	
+instance (Ord a) => Ord (Complex a) where
+    compare (Complex r1 imaginary1) (Complex r2 imaginary2) = error "complex numbers cannot be compared unambiguously"
+
+
+data QState a = QState a String   -- комплексное: с состоянием
+
+
+instance (Show a) => Show (QState a) where
+    show (QState complex state) = show complex ++ " " ++ state
+	
+instance Functor QState where
+    fmap f (QState complex state) = QState (f complex) state
+	
+instance (Eq a) => Eq (QState a) where
+    (QState complex1 state1) == (QState complex2 state2) = (complex1 == complex2) && (state1 == state2)
+
+type Qubit a = [QState a]  -- список комплексов??
+
+	
+toList :: Qubit (Complex a)-> [Complex a]
+toList [] = []
+toList q = [complex | (QState complex _) <- q]
+
+toLabelList :: Qubit (Complex a) -> [String]
+toLabelList [] = []
+toLabelList q = [str | (QState _ str) <- q]
+
+fromList :: [Complex a]->[String]->Qubit (Complex a)
+fromList [] [] = []
+fromList complex1 str1 = [ (QState complex str) | complex <- complex1, str <- str1 ]
+
+toPairList:: Qubit a->[(a,String)]
+toPairList [] = []
+toPairList ((QState complex str):xs) = (complex, str):toPairList xs
+
+fromPairList :: [(Complex a,String)] -> Qubit (Complex a)
+fromPairList [] = []
+fromPairList pairs = [ (QState complex str) | (complex, str) <- pairs]
+ 
+scalarProduct:: (Num a) => Qubit (Complex a) -> Qubit (Complex a) -> (Complex a)
+scalarProduct [] [] = Complex 0 0
+scalarProduct ((QState comp1 _):xs) ((QState comp2 _):ys) = add (scalar comp1 comp2) (scalarProduct xs ys) where
+
+     add:: (Num a) => Complex a -> Complex a -> Complex a
+     add (Complex real1 imaginary1) (Complex real2 imaginary2) = Complex (real1 + real2) (imaginary1 + imaginary2) 
+     scalar :: (Num a) => Complex a->Complex a->Complex a
+     scalar (Complex real1 imaginary1) (Complex real2 imaginary2) = Complex (real1*real2 - imaginary1*imaginary2) (real1*real2 + imaginary1*imaginary2)
+
+--не понял как делать ENTAGLE
